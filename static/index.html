@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormaAi Studio</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Google Model Viewer -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    
+    <div class="container">
+        <!-- Top Bar with Language Switcher -->
+        <div class="top-bar">
+            <div class="lang-switcher">
+                <button class="lang-btn active" id="lang-en-btn" aria-label="Switch to English">
+                    <svg viewBox="0 0 36 36" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><clipPath id="circle-clip"><circle cx="18" cy="18" r="18"/></clipPath><g clip-path="url(#circle-clip)"><rect width="36" height="36" fill="#fff"/><path d="M0 0h36v2.77H0zm0 5.54h36v2.77H0zm0 11.08h36v2.77H0zm0 5.54h36v2.77H0zm0 5.54h36v2.77H0zm0 5.54h36v2.77H0zm0 11.08h36v2.77H0zm0 5.54h36v2.77H0z" fill="#B22234"/><rect width="16" height="19.38" fill="#3C3B6E"/><g fill="#fff"><circle cx="3" cy="3" r="0.8"/><circle cx="7" cy="3" r="0.8"/><circle cx="11" cy="3" r="0.8"/><circle cx="15" cy="3" r="0.8"/><circle cx="5" cy="7" r="0.8"/><circle cx="9" cy="7" r="0.8"/><circle cx="13" cy="7" r="0.8"/><circle cx="3" cy="11" r="0.8"/><circle cx="7" cy="11" r="0.8"/><circle cx="11" cy="11" r="0.8"/><circle cx="15" cy="11" r="0.8"/><circle cx="5" cy="15" r="0.8"/><circle cx="9" cy="15" r="0.8"/><circle cx="13" cy="15" r="0.8"/></g></g></svg>
+                    <span>EN</span>
+                </button>
+                <button class="lang-btn" id="lang-ru-btn" aria-label="Переключить на русский">
+                    <svg viewBox="0 0 36 36" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><clipPath id="russia-clip"><circle cx="18" cy="18" r="18"/></clipPath><g clip-path="url(#russia-clip)"><rect width="36" height="12" fill="#fff"/><rect y="12" width="36" height="12" fill="#0039A6"/><rect y="24" width="36" height="12" fill="#D52B1E"/></g></svg>
+                    <span>RU</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <h1 class="header-title" data-i18n="header_title">FormaAi Studio</h1>
+            <p class="header-subtitle" data-i18n="header_subtitle">Unified Hybrid 3D Generation Pipeline (Mesh + Gaussians)</p>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="workspace">
+            <!-- Left Side: Controls -->
+            <div class="controls-panel glass-panel">
+                <!-- Dropzone Section -->
+                <div class="panel-section">
+                    <h2 class="section-title">
+                        <span class="icon">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        </span>
+                        <span data-i18n="input_image">1. Input Image</span>
+                    </h2>
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" id="file-input" accept="image/*" style="display: none;">
+                        <div class="dropzone-empty" id="dropzone-empty">
+                            <svg class="upload-icon" viewBox="0 0 24 24" width="48" height="48">
+                                <path fill="currentColor" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                            </svg>
+                            <p class="upload-text">
+                                <span data-i18n="upload_text">Drag & drop image here or </span>
+                                <span data-i18n="upload_browse" style="color: var(--neon-indigo); font-weight: 600;">choose file</span>
+                            </p>
+                            <p class="upload-hint" data-i18n="upload_hint">Supports PNG, JPG, JPEG</p>
+                        </div>
+                        <div class="dropzone-preview" id="dropzone-preview" style="display: none;">
+                            <img id="image-preview" src="" alt="Preview">
+                            <button class="remove-btn" id="remove-img-btn" type="button">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <span data-i18n="remove_btn">Delete</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameters Section -->
+                <div class="panel-section">
+                    <div class="accordion">
+                        <div class="accordion-header" id="accordion-basic-btn">
+                            <h2 class="section-title">
+                                <span class="icon">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83 2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                </span>
+                                <span data-i18n="gen_params">2. Generation Settings</span>
+                            </h2>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="accordion-content" id="accordion-basic-content">
+                            <!-- Basic fields -->
+                            <div class="form-group">
+                                <label for="seed-input" data-i18n="seed_label">Random Seed</label>
+                                <input type="number" id="seed-input" value="42" min="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><span data-i18n="stage1_steps">Sparse Structure Steps (Stage 1):</span> <span id="ss-steps-val" class="badge">12</span></label>
+                                <input type="range" id="ss-steps-input" min="4" max="30" step="1" value="12">
+                            </div>
+
+                            <div class="form-group">
+                                <label><span data-i18n="stage1_cfg">Sparse Structure CFG (Guidance):</span> <span id="ss-cfg-val" class="badge">7.5</span></label>
+                                <input type="range" id="ss-cfg-input" min="1" max="15" step="0.5" value="7.5">
+                            </div>
+
+                            <div class="form-group">
+                                <label><span data-i18n="stage2_steps">Structured Latent Steps (Stage 2):</span> <span id="slat-steps-val" class="badge">12</span></label>
+                                <input type="range" id="slat-steps-input" min="4" max="30" step="1" value="12">
+                            </div>
+
+                            <div class="form-group">
+                                <label><span data-i18n="stage2_cfg">Structured Latent CFG (Guidance):</span> <span id="slat-cfg-val" class="badge">3.0</span></label>
+                                <input type="range" id="slat-cfg-input" min="1" max="10" step="0.5" value="3.0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Postprocessing Section -->
+                <div class="panel-section">
+                    <div class="accordion">
+                        <div class="accordion-header" id="accordion-post-btn">
+                            <h2 class="section-title">
+                                <span class="icon">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                </span>
+                                <span data-i18n="postprocess_title">3. Postprocessing & AI Upscaling</span>
+                            </h2>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="accordion-content" id="accordion-post-content">
+                            <!-- Checkbox -->
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="refine-gs-input">
+                                <label for="refine-gs-input" data-i18n="refine_gs_label">Refine 3D Gaussians (Differentiable Refinement)</label>
+                            </div>
+
+                            <div class="form-group" id="refine-steps-group">
+                                <label><span data-i18n="refine_steps_label">Optimization Steps:</span> <span id="refine-steps-val" class="badge">100</span></label>
+                                <input type="range" id="refine-steps-input" min="20" max="300" step="10" value="100">
+                            </div>
+
+                            <div class="form-group">
+                                <label data-i18n="mesh_upscaling">Mesh Texture Scaling (AI Super Resolution)</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="upscale-factor" value="1">
+                                        <span data-i18n="upscale_off">Off</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="upscale-factor" value="2" checked>
+                                        <span>2K (Swin2SR x2)</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="upscale-factor" value="4">
+                                        <span>4K (Swin2SR x4)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label data-i18n="upscale_device">Upscaling Device</label>
+                                <div class="radio-group device-radio">
+                                    <label class="radio-label">
+                                        <input type="radio" name="upscale-device" value="GPU">
+                                        <span data-i18n="device_gpu">GPU (Fast)</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="upscale-device" value="CPU">
+                                        <span data-i18n="device_cpu">CPU (No OOM)</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="upscale-device" value="Auto-Fallback" checked>
+                                        <span data-i18n="device_auto">Auto-Fallback</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="btn-primary" id="generate-btn" data-i18n="generate_btn">Generate 3D Object</button>
+                
+                <!-- Status & Logger Box -->
+                <div class="status-box" id="status-box" style="display: none;">
+                    <div class="status-header">
+                        <span class="status-label"><span data-i18n="status_label">Status:</span> <strong id="status-text">Pending...</strong></span>
+                        <span class="status-percent" id="status-percent">0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <div class="log-output" id="log-output">
+                        <div class="log-line text-cyan">> Initializing interface...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Preview & Viewer -->
+            <div class="preview-panel glass-panel">
+                <h2 class="section-title">
+                    <span class="icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </span>
+                    <span data-i18n="result_title">4. Generation Result</span>
+                </h2>
+                
+                <!-- 3D Viewport -->
+                <div class="viewport-container">
+                    <div class="viewport-placeholder" id="viewport-placeholder">
+                        <svg class="placeholder-icon" viewBox="0 0 24 24" width="64" height="64">
+                            <path fill="currentColor" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        <p data-i18n="viewport_placeholder">GLB 3D model will appear here after generation completes</p>
+                    </div>
+                    
+                    <model-viewer id="model-viewer" 
+                                  src="" 
+                                  alt="FormaAi Generated 3D Model" 
+                                  auto-rotate 
+                                  camera-controls 
+                                  shadow-intensity="1" 
+                                  exposure="1" 
+                                  style="display: none; width: 100%; height: 100%;">
+                    </model-viewer>
+                </div>
+
+                <!-- Tabbed Additional Previews -->
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="images-tab" data-i18n="tab_preview">Add. Preview</button>
+                        <button class="tab-btn" data-tab="files-tab" id="downloads-tab-btn" data-i18n="tab_downloads" disabled>Downloads</button>
+                    </div>
+                    
+                    <div class="tabs-content">
+                        <!-- Images Preview Tab -->
+                        <div class="tab-pane active" id="images-tab">
+                            <div class="gallery">
+                                <div class="gallery-item">
+                                    <h3 data-i18n="mask_title">Image Mask (Rembg)</h3>
+                                    <div class="gallery-image-box">
+                                        <div class="img-placeholder" id="mask-placeholder" data-i18n="mask_placeholder">Waiting for generation...</div>
+                                        <img id="mask-preview" src="" alt="Mask Preview" style="display: none;">
+                                    </div>
+                                </div>
+                                <div class="gallery-item">
+                                    <h3 data-i18n="render_title">3D Gaussians Render (Front View)</h3>
+                                    <div class="gallery-image-box">
+                                        <div class="img-placeholder" id="render-placeholder" data-i18n="render_placeholder">Waiting for generation...</div>
+                                        <img id="render-preview" src="" alt="Gaussian Preview" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Downloads Tab -->
+                        <div class="tab-pane" id="files-tab">
+                            <div class="files-list" id="files-list">
+                                <p class="text-gray" id="downloads-empty-text" data-i18n="downloads_empty">Result files not generated.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frontend Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Виртуальное окружение Python (самое тяжелое, весит гигабайты)
+venv_trellis/
+**/venv_trellis/
+TRELLIS-main/venv_trellis/
+
+# Кэш компиляции Python
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Временные папки с тестами
+scratch/
+**/scratch/
+
+# Все сгенерированные пользователями 3D-модели (GLB, OBJ, PLY)
+static/outputs/*
+static/outputs/**/*
+TRELLIS-main/outputs/
+
+# Тяжелый установочный файл Flash Attention (250+ МБ)
+TRELLIS-main/flash_attn.whl
+
+# Файлы операционной системы
+.DS_Store
+Thumbs.db

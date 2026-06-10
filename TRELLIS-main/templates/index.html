@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormaAI TRELLIS 3D Generator</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Google <model-viewer> for premium interactive 3D rendering -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+</head>
+<body>
+    <!-- Background glow elements -->
+    <div class="glow-sphere sphere-1"></div>
+    <div class="glow-sphere sphere-2"></div>
+    <div class="glow-sphere sphere-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-cube logo-icon animate-float"></i>
+                <div class="logo-text">
+                    <h1>Forma<span>AI</span></h1>
+                    <p>TRELLIS 3D Generation Suite</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <span class="status-badge"><i class="fa-solid fa-circle status-dot online"></i> GPU Активен</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-workspace">
+            <!-- Left Panel: Controls & Upload -->
+            <section class="workspace-panel panel-left glass">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-cloud-arrow-up"></i> Загрузка изображения</h2>
+                </div>
+                
+                <!-- Dropzone -->
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    <div class="upload-content" id="uploadContent">
+                        <i class="fa-solid fa-images upload-icon"></i>
+                        <p class="upload-title">Перетащите изображение сюда</p>
+                        <p class="upload-subtitle">или нажмите для выбора файла</p>
+                        <span class="upload-limit">Поддержка PNG, JPG (будет автоматически удален фон)</span>
+                    </div>
+                    <!-- Preprocessing view -->
+                    <div class="preview-container" id="previewContainer" style="display: none;">
+                        <img id="imagePreview" src="" alt="Preview">
+                        <div class="preview-overlay">
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnResetImage">
+                                <i class="fa-solid fa-rotate-left"></i> Сбросить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameters Accordion -->
+                <div class="parameters-section">
+                    <div class="section-title">
+                        <h3><i class="fa-solid fa-sliders"></i> Параметры генерации</h3>
+                    </div>
+                    
+                    <form id="generationForm">
+                        <input type="hidden" id="sessionId" name="id">
+                        
+                        <div class="form-group">
+                            <label for="seed">Seed (Случайное зерно)</label>
+                            <div class="input-with-checkbox">
+                                <input type="number" id="seed" name="seed" value="0" class="form-control" disabled>
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="randomizeSeed" name="randomize_seed" checked>
+                                    <span class="checkmark"></span> Случайно
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item open">
+                            <div class="accordion-title">
+                                <span>Этап 1: Разреженное облако</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <div class="form-group">
+                                    <div class="slider-header">
+                                        <label>Сила подсказки (CFG)</label>
+                                        <span class="slider-val" id="ssGuidanceVal">7.5</span>
+                                    </div>
+                                    <input type="range" name="ss_guidance_strength" min="1.0" max="15.0" step="0.5" value="7.5" class="slider" oninput="document.getElementById('ssGuidanceVal').innerText=this.value">
+                                </div>
+                                <div class="form-group">
+                                    <div class="slider-header">
+                                        <label>Шаги сэмплирования</label>
+                                        <span class="slider-val" id="ssStepsVal">12</span>
+                                    </div>
+                                    <input type="range" name="ss_sampling_steps" min="1" max="50" step="1" value="12" class="slider" oninput="document.getElementById('ssStepsVal').innerText=this.value">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item open">
+                            <div class="accordion-title">
+                                <span>Этап 2: Структурированный латент</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <div class="form-group">
+                                    <div class="slider-header">
+                                        <label>Сила подсказки (CFG)</label>
+                                        <span class="slider-val" id="slatGuidanceVal">3.0</span>
+                                    </div>
+                                    <input type="range" name="slat_guidance_strength" min="1.0" max="15.0" step="0.5" value="3.0" class="slider" oninput="document.getElementById('slatGuidanceVal').innerText=this.value">
+                                </div>
+                                <div class="form-group">
+                                    <div class="slider-header">
+                                        <label>Шаги сэмплирования</label>
+                                        <span class="slider-val" id="slatStepsVal">12</span>
+                                    </div>
+                                    <input type="range" name="slat_sampling_steps" min="1" max="50" step="1" value="12" class="slider" oninput="document.getElementById('slatStepsVal').innerText=this.value">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnGenerate" disabled>
+                            <span class="btn-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Сгенерировать 3D</span>
+                            <span class="spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin"></i> Генерация...</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Panel: Live Output & 3D Viewer -->
+            <section class="workspace-panel panel-right glass">
+                <div class="panel-header tabs-header">
+                    <button class="panel-tab active" id="tabPreview">
+                        <i class="fa-solid fa-play"></i> Видео Превью
+                    </button>
+                    <button class="panel-tab" id="tab3dViewer" disabled>
+                        <i class="fa-solid fa-cube"></i> Интерактивный 3D
+                    </button>
+                </div>
+
+                <!-- Preview Tab Content -->
+                <div class="tab-content" id="contentPreview">
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <div class="placeholder-icon-wrap">
+                            <i class="fa-solid fa-film placeholder-icon animate-pulse"></i>
+                        </div>
+                        <h3>Ожидание генерации</h3>
+                        <p>Загрузите изображение и нажмите кнопку генерации для создания 3D модели</p>
+                    </div>
+                    <div class="video-container" id="videoContainer" style="display: none;">
+                        <video id="previewVideo" autoplay loop muted playsinline controls></video>
+                    </div>
+                </div>
+
+                <!-- 3D Viewer Tab Content -->
+                <div class="tab-content" id="content3dViewer" style="display: none;">
+                    <div class="viewer-container">
+                        <model-viewer id="glbViewer" 
+                                      alt="3D сгенерированная модель" 
+                                      auto-rotate 
+                                      camera-controls 
+                                      shadow-intensity="1.5" 
+                                      shadow-softness="0.8"
+                                      exposure="1.0"
+                                      environment-image="legacy"
+                                      interaction-prompt="auto">
+                            <div class="viewer-loading" slot="poster">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Загрузка 3D модели...
+                            </div>
+                        </model-viewer>
+                    </div>
+                </div>
+
+                <!-- Export Controls -->
+                <div class="export-controls glass-dark" id="exportControls" style="display: none;">
+                    <div class="export-header">
+                        <h4><i class="fa-solid fa-file-export"></i> Экспорт и Скачивание</h4>
+                    </div>
+                    <div class="export-options" id="exportOptions">
+                        <div class="glb-baking-config">
+                            <div class="config-row">
+                                <div class="form-group-inline">
+                                    <label for="meshSimplify">Упрощение сетки</label>
+                                    <select id="meshSimplify" class="form-control-inline">
+                                        <option value="0.90">90% (Детализированная)</option>
+                                        <option value="0.95" selected>95% (Оптимальная)</option>
+                                        <option value="0.98">98% (Легкая)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group-inline">
+                                    <label for="textureSize">Размер текстуры</label>
+                                    <select id="textureSize" class="form-control-inline">
+                                        <option value="512">512 px</option>
+                                        <option value="1024" selected>1024 px (HD)</option>
+                                        <option value="2048">2048 px (UHD)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-block" id="btnExtractGlb">
+                                <span class="btn-text"><i class="fa-solid fa-arrows-to-eye"></i> Извлечь GLB сетку</span>
+                                <span class="spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin"></i> Запекание текстур...</span>
+                            </button>
+                        </div>
+
+                        <div class="download-buttons">
+                            <a id="linkDownloadGlb" href="#" download class="btn btn-success btn-download disabled" target="_blank">
+                                <i class="fa-solid fa-cube"></i> Скачать GLB
+                            </a>
+                            <a id="linkDownloadPly" href="#" download class="btn btn-info btn-download" target="_blank">
+                                <i class="fa-solid fa-cloud"></i> Скачать PLY (Гауссианы)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Generation History Gallery -->
+        <section class="history-section glass">
+            <div class="section-header">
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> История генераций</h2>
+                <button class="btn btn-secondary btn-sm" id="btnRefreshHistory">
+                    <i class="fa-solid fa-arrows-rotate"></i> Обновить
+                </button>
+            </div>
+            
+            <div class="history-gallery" id="historyGallery">
+                <!-- Empty State -->
+                <div class="gallery-empty" id="galleryEmpty">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p>История пуста. Создайте свою первую 3D-модель!</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Custom JS -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
