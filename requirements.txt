@@ -6,7 +6,7 @@ xformers==0.0.27.post2
 # 3D Convolution, Geometry and Voxel Processing
 spconv-cu120==2.3.6
 cumm-cu120==0.4.11
-kaolin==0.18.0
+# kaolin==0.18.0
 
 # 3D Graphics and Math Libraries
 easydict==1.13
