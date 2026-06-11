@@ -29,8 +29,9 @@ fastapi==0.111.0
 uvicorn==0.30.1
 python-multipart==0.0.9
 
-# Specialized Git repositories for 3D Rasterization
-git+https://github.com/EasternJournalist/utils3d.git
-git+https://github.com/NVlabs/nvdiffrast.git
-git+https://github.com/JeffreyXiang/diffoctreerast.git
-git+https://github.com/graphdeco-inria/diff-gaussian-rasterization.git
+# Specialized Git repositories for 3D Rasterization (Installed manually in setup script/docker)
+# git+https://github.com/EasternJournalist/utils3d.git
+# git+https://github.com/NVlabs/nvdiffrast.git
+# git+https://github.com/JeffreyXiang/diffoctreerast.git
+# git+https://github.com/graphdeco-inria/diff-gaussian-rasterization.git
+
