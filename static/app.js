@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileInput = document.getElementById("file-input");
     const dropzoneEmpty = document.getElementById("dropzone-empty");
     const dropzonePreview = document.getElementById("dropzone-preview");
-    const imagePreview = document.getElementById("image-preview");
+    const previewGrid = document.getElementById("preview-grid");
     const removeImgBtn = document.getElementById("remove-img-btn");
 
     // 1. Bilingual Translations Dictionary
@@ -33,8 +33,9 @@ document.addEventListener("DOMContentLoaded", () => {
             input_image: "1. Input Image",
             upload_text: "Drag & drop image here or ",
             upload_browse: "choose file",
-            upload_hint: "Supports PNG, JPG, JPEG",
+            upload_hint: "Supports PNG, JPG, JPEG (Up to 3 images)",
             remove_btn: "Delete",
+            remove_all_btn: "Clear All",
             gen_params: "2. Generation Settings",
             seed_label: "Random Seed",
             stage1_steps: "Sparse Structure Steps (Stage 1):",
@@ -64,7 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
             
             // Dynamic text
             alert_select_image: "Please select an image file.",
-            alert_upload_image: "Please upload an input image in section 1 first.",
+            alert_max_images: "You can upload a maximum of 3 images.",
+            alert_upload_image: "Please upload at least one input image in section 1 first.",
             log_submitting: "Initializing form submission...",
             btn_generating: "Generating...",
             log_registered: "Task registered. ID: ",
@@ -92,8 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
             input_image: "1. Входные данные",
             upload_text: "Перетащите изображение сюда или ",
             upload_browse: "выберите файл",
-            upload_hint: "Поддерживаются PNG, JPG, JPEG",
+            upload_hint: "Поддерживаются PNG, JPG, JPEG (До 3 изображений)",
             remove_btn: "Удалить",
+            remove_all_btn: "Очистить всё",
             gen_params: "2. Параметры генерации",
             seed_label: "Случайное зерно (Seed)",
             stage1_steps: "Sparse Structure Steps (Шаги Stage 1):",
@@ -123,7 +126,8 @@ document.addEventListener("DOMContentLoaded", () => {
             
             // Dynamic text
             alert_select_image: "Пожалуйста, выберите файл изображения.",
-            alert_upload_image: "Пожалуйста, загрузите исходное изображение в зону 1.",
+            alert_max_images: "Максимально можно загрузить 3 изображения.",
+            alert_upload_image: "Пожалуйста, загрузите хотя бы одно изображение в зону 1.",
             log_submitting: "Инициализация отправки формы...",
             btn_generating: "Генерируется...",
             log_registered: "Задача зарегистрирована. ID: ",
@@ -255,10 +259,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 6. Drag & Drop Upload Logic
-    let selectedFile = null;
+    let selectedFiles = [];
 
     dropzone.addEventListener("click", (e) => {
-        if (e.target !== removeImgBtn && !removeImgBtn.contains(e.target)) {
+        if (e.target !== removeImgBtn && !removeImgBtn.contains(e.target) && !e.target.closest('.card-remove-btn')) {
             fileInput.click();
         }
     });
@@ -293,28 +297,78 @@ document.addEventListener("DOMContentLoaded", () => {
     removeImgBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        selectedFile = null;
+        selectedFiles = [];
         fileInput.value = "";
-        imagePreview.src = "";
-        dropzonePreview.style.display = "none";
-        dropzoneEmpty.style.display = "block";
+        updatePreview();
     });
 
     function handleFiles(files) {
-        if (files.length > 0) {
-            const file = files[0];
+        let addedCount = 0;
+        let hasNonImage = false;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
             if (file.type.startsWith("image/")) {
-                selectedFile = file;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagePreview.src = e.target.result;
-                    dropzoneEmpty.style.display = "none";
-                    dropzonePreview.style.display = "flex";
-                };
-                reader.readAsDataURL(file);
+                if (selectedFiles.length >= 3) {
+                    alert(translations[currentLang].alert_max_images);
+                    break;
+                }
+                selectedFiles.push(file);
+                addedCount++;
             } else {
-                alert(translations[currentLang].alert_select_image);
+                hasNonImage = true;
             }
+        }
+        
+        if (hasNonImage && addedCount === 0) {
+            alert(translations[currentLang].alert_select_image);
+        }
+        
+        if (addedCount > 0) {
+            updatePreview();
+        }
+    }
+
+    function updatePreview() {
+        previewGrid.innerHTML = "";
+        
+        if (selectedFiles.length > 0) {
+            dropzoneEmpty.style.display = "none";
+            dropzonePreview.style.display = "block";
+            
+            selectedFiles.forEach((file, index) => {
+                const card = document.createElement("div");
+                card.className = "preview-card";
+                
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(file);
+                img.onload = () => URL.revokeObjectURL(img.src);
+                
+                const cardRemoveBtn = document.createElement("button");
+                cardRemoveBtn.type = "button";
+                cardRemoveBtn.className = "card-remove-btn";
+                cardRemoveBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                `;
+                
+                cardRemoveBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectedFiles.splice(index, 1);
+                    fileInput.value = "";
+                    updatePreview();
+                });
+                
+                card.appendChild(img);
+                card.appendChild(cardRemoveBtn);
+                previewGrid.appendChild(card);
+            });
+        } else {
+            dropzoneEmpty.style.display = "flex";
+            dropzonePreview.style.display = "none";
         }
     }
 
@@ -322,7 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pollInterval = null;
 
     generateBtn.addEventListener("click", () => {
-        if (!selectedFile) {
+        if (selectedFiles.length === 0) {
             alert(translations[currentLang].alert_upload_image);
             return;
         }
@@ -349,7 +403,9 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Gather params
         const formData = new FormData();
-        formData.append("image", selectedFile);
+        selectedFiles.forEach(file => {
+            formData.append("images", file);
+        });
         formData.append("seed", document.getElementById("seed-input").value);
         formData.append("ss_steps", document.getElementById("ss-steps-input").value);
         formData.append("ss_cfg", document.getElementById("ss-cfg-input").value);

@@ -38,8 +38,8 @@ def main():
     processed_image.save(os.path.join(output_dir, "preprocessed.png"))
     print(f"Saved preprocessed image to: {output_dir}/preprocessed.png")
     
-    # 4. Run unified forward pass
-    print("Running unified forward pass (Sparse Structure + Latent Flow + Multi-decoder inference)...")
+    # 4. Run unified forward pass (single image)
+    print("Running unified forward pass for SINGLE image...")
     aligned_outputs = model(
         processed_image,
         seed=42,
@@ -47,23 +47,50 @@ def main():
         ss_cfg=7.5,
         slat_steps=12,
         slat_cfg=3.0,
-        formats=['mesh', 'gaussian', 'radiance_field'],
+        formats=['mesh', 'gaussian'],
         preprocess=False, # Already preprocessed
         refine_gs=False, # Disabled by default
         refine_steps=100
     )
     
-    # 5. Print alignment metadata
-    center = aligned_outputs['center']
-    scale = aligned_outputs['scale']
-    print(f"\nCoordinate Alignment Metadata:")
-    print(f" - Center offset translated to origin: {center.cpu().numpy().tolist()}")
-    print(f" - Scale multiplier: {scale}")
+    print("\nSaving single image aligned assets...")
+    model.save_hybrid_asset(aligned_outputs, output_dir, prefix="forma_single", upscale_factor=2)
+
+    # 5. Run multi-image forward pass
+    print("\n" + "=" * 40)
+    print("Testing MULTI-IMAGE mode...")
+    print("=" * 40)
     
-    # 6. Save hybrid assets
-    print("\nSaving aligned hybrid assets (GLB + PLY + Metadata)...")
-    model.save_hybrid_asset(aligned_outputs, output_dir, prefix="forma_hybrid", upscale_factor=2)
-    
+    multi_img_paths = [
+        "TRELLIS-main/assets/example_multi_image/character_1.png",
+        "TRELLIS-main/assets/example_multi_image/character_2.png",
+        "TRELLIS-main/assets/example_multi_image/character_3.png"
+    ]
+    multi_images = []
+    for p in multi_img_paths:
+        full_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), p)
+        if os.path.exists(full_p):
+            multi_images.append(Image.open(full_p).convert("RGBA"))
+            
+    if len(multi_images) > 0:
+        print(f"Loaded {len(multi_images)} images for multi-view generation.")
+        print("Running unified forward pass for MULTI-IMAGE...")
+        multi_outputs = model(
+            multi_images,
+            seed=42,
+            ss_steps=12,
+            ss_cfg=7.5,
+            slat_steps=12,
+            slat_cfg=3.0,
+            formats=['mesh', 'gaussian'],
+            preprocess=True,
+            refine_gs=False
+        )
+        print("\nSaving multi-image aligned assets...")
+        model.save_hybrid_asset(multi_outputs, output_dir, prefix="forma_multi", upscale_factor=2)
+    else:
+        print("Warning: Multi-image assets not found, skipping multi-image test.")
+
     print("\n" + "=" * 80)
     print("FormaAi verification completed successfully!")
     print("=" * 80)

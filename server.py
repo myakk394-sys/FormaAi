@@ -48,7 +48,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # In-memory task database
 tasks: Dict[str, Dict[str, Any]] = {}
 
-def run_pipeline_task(task_id: str, image: Image.Image, params: Dict[str, Any]):
+def run_pipeline_task(task_id: str, images: List[Image.Image], params: Dict[str, Any]):
     try:
         tasks[task_id]["status"] = "processing"
         tasks[task_id]["progress"] = 10
@@ -57,17 +57,25 @@ def run_pipeline_task(task_id: str, image: Image.Image, params: Dict[str, Any]):
         task_dir = os.path.join(OUTPUT_DIR, task_id)
         os.makedirs(task_dir, exist_ok=True)
         
-        # 1. Preprocess input image
-        processed_image = model.preprocess(image)
+        # 1. Preprocess input images
+        processed_images = [model.preprocess(img) for img in images]
+        
+        # Save first preprocessed image as primary preview
         preprocessed_path = os.path.join(task_dir, "preprocessed.png")
-        processed_image.save(preprocessed_path)
+        processed_images[0].save(preprocessed_path)
+        
+        # Save all preprocessed images for reference
+        for idx, p_img in enumerate(processed_images):
+            p_img.save(os.path.join(task_dir, f"preprocessed_{idx}.png"))
         
         tasks[task_id]["progress"] = 30
         tasks[task_id]["stage"] = "Запуск 3D-генерации (Stage 1 & Stage 2)..."
         
-        # 2. Forward pass
+        # 2. Forward pass (refinement is only allowed/supported for single image)
+        run_refine = params["refine_gs"] if len(processed_images) == 1 else False
+        
         outputs = model(
-            processed_image,
+            processed_images,
             seed=int(params["seed"]),
             ss_steps=int(params["ss_steps"]),
             ss_cfg=float(params["ss_cfg"]),
@@ -75,7 +83,7 @@ def run_pipeline_task(task_id: str, image: Image.Image, params: Dict[str, Any]):
             slat_cfg=float(params["slat_cfg"]),
             formats=['mesh', 'gaussian'],
             preprocess=False, # Already preprocessed
-            refine_gs=params["refine_gs"],
+            refine_gs=run_refine,
             refine_steps=int(params["refine_steps"])
         )
         
@@ -141,7 +149,7 @@ def run_pipeline_task(task_id: str, image: Image.Image, params: Dict[str, Any]):
 @app.post("/api/generate")
 async def generate_3d(
     background_tasks: BackgroundTasks,
-    image: UploadFile = File(...),
+    images: List[UploadFile] = File(...),
     seed: int = Form(42),
     ss_steps: int = Form(12),
     ss_cfg: float = Form(7.5),
@@ -153,12 +161,16 @@ async def generate_3d(
     upscale_device: str = Form("Auto-Fallback")
 ):
     try:
-        # Load and validate image
-        contents = await image.read()
-        import io
-        img = Image.open(io.BytesIO(contents))
+        # Load and validate images
+        img_list = []
+        for image_file in images:
+            contents = await image_file.read()
+            import io
+            img_list.append(Image.open(io.BytesIO(contents)))
+        if not img_list:
+            raise ValueError("No images provided")
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid image file.")
+        raise HTTPException(status_code=400, detail=f"Invalid image file(s): {str(e)}")
         
     task_id = str(uuid.uuid4())
     tasks[task_id] = {
@@ -182,9 +194,10 @@ async def generate_3d(
     }
     
     # Launch pipeline run in background task thread
-    background_tasks.add_task(run_pipeline_task, task_id, img, params)
+    background_tasks.add_task(run_pipeline_task, task_id, img_list, params)
     
     return {"task_id": task_id, "status": "pending"}
+
 
 @app.get("/api/task/{task_id}")
 async def get_task_status(task_id: str):
@@ -202,5 +215,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    # Start FastAPI server on port 7860
-    uvicorn.run(app, host="127.0.0.1", port=7860)
+    import argparse
+    parser = argparse.ArgumentParser(description="Start FormaAi Server")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host address")
+    parser.add_argument("--port", type=int, default=7860, help="Port number")
+    args = parser.parse_args()
+    
+    uvicorn.run(app, host=args.host, port=args.port)

@@ -3,7 +3,7 @@ import sys
 import math
 import json
 import time
-from typing import List, Dict, Tuple, Any, Literal
+from typing import List, Dict, Tuple, Any, Literal, Union
 import torch
 import torch.nn as nn
 import numpy as np
@@ -72,7 +72,7 @@ class FormaAi(nn.Module):
     @torch.no_grad()
     def forward(
         self,
-        image: Image.Image,
+        image: Union[Image.Image, List[Image.Image]],
         seed: int = 42,
         ss_steps: int = 12,
         ss_cfg: float = 7.5,
@@ -84,10 +84,10 @@ class FormaAi(nn.Module):
         refine_steps: int = 100
     ) -> Dict[str, Any]:
         """
-        Single unified forward pass of the hybrid model.
+        Unified forward pass of the hybrid model supporting single or multi-image.
         
         Args:
-            image (Image.Image): The input image prompt.
+            image (Union[Image.Image, List[Image.Image]]): The input image or list of images.
             seed (int): The random seed.
             ss_steps (int): Sampling steps for Stage 1 (Sparse Structure).
             ss_cfg (float): Guidance strength for Stage 1.
@@ -105,23 +105,38 @@ class FormaAi(nn.Module):
         gc.collect()
         torch.cuda.empty_cache()
 
+        if isinstance(image, list):
+            images = image
+        else:
+            images = [image]
+
         if preprocess:
-            image = self.preprocess(image)
+            images = [self.preprocess(img) for img in images]
             
         with torch.no_grad():
             # 1. Condition generation
             self.image_encoder.to(self.device)
-            cond = self.pipeline.get_cond([image])
+            cond = self.pipeline.get_cond(images)
+            cond['neg_cond'] = cond['neg_cond'][:1]
             torch.manual_seed(seed)
             
             # 2. Sparse structure generation (Stage 1 flow matching pass)
             self.sparse_flow_model.to(self.device)
             self.sparse_decoder.to(self.device)
-            coords = self.pipeline.sample_sparse_structure(
-                cond,
-                num_samples=1,
-                sampler_params={"steps": ss_steps, "cfg_strength": ss_cfg}
-            )
+            
+            if len(images) > 1:
+                with self.pipeline.inject_sampler_multi_image('sparse_structure_sampler', len(images), ss_steps, mode='stochastic'):
+                    coords = self.pipeline.sample_sparse_structure(
+                        cond,
+                        num_samples=1,
+                        sampler_params={"steps": ss_steps, "cfg_strength": ss_cfg}
+                    )
+            else:
+                coords = self.pipeline.sample_sparse_structure(
+                    cond,
+                    num_samples=1,
+                    sampler_params={"steps": ss_steps, "cfg_strength": ss_cfg}
+                )
             
             # Offload Stage 1 models to save memory
             self.image_encoder.to("cpu")
@@ -131,11 +146,20 @@ class FormaAi(nn.Module):
             
             # 3. Structured latent generation (Stage 2 flow matching pass)
             self.slat_flow_model.to(self.device)
-            slat = self.pipeline.sample_slat(
-                cond,
-                coords,
-                sampler_params={"steps": slat_steps, "cfg_strength": slat_cfg}
-            )
+            
+            if len(images) > 1:
+                with self.pipeline.inject_sampler_multi_image('slat_sampler', len(images), slat_steps, mode='stochastic'):
+                    slat = self.pipeline.sample_slat(
+                        cond,
+                        coords,
+                        sampler_params={"steps": slat_steps, "cfg_strength": slat_cfg}
+                    )
+            else:
+                slat = self.pipeline.sample_slat(
+                    cond,
+                    coords,
+                    sampler_params={"steps": slat_steps, "cfg_strength": slat_cfg}
+                )
             
             # Offload Stage 2 model
             self.slat_flow_model.to("cpu")
@@ -147,7 +171,7 @@ class FormaAi(nn.Module):
         # 4b. Differentiable Gaussian Refinement
         if refine_gs and 'gaussian' in raw_outputs:
             gs = raw_outputs['gaussian'][0]
-            refined_gs = self.refine_gaussians(gs, image, steps=refine_steps)
+            refined_gs = self.refine_gaussians(gs, images[0], steps=refine_steps)
             raw_outputs['gaussian'] = [refined_gs]
             
         with torch.no_grad():
