@@ -25,8 +25,14 @@ try:
     from trellis.pipelines import TrellisImageTo3DPipeline
     from trellis.representations import Gaussian, MeshExtractResult
     from trellis.utils import render_utils, postprocessing_utils
-except ImportError:
-    print("WARNING: TRELLIS packages could not be imported. Please run within venv_trellis.")
+except ImportError as e:
+    import traceback
+    traceback.print_exc()
+    print(f"WARNING: TRELLIS packages could not be imported: {e}. Please run within venv_trellis.")
+    class Gaussian:
+        pass
+    class MeshExtractResult:
+        pass
 
 class FormaAi(nn.Module):
     """
