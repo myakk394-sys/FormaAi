@@ -22,6 +22,8 @@ pillow==10.4.0
 transformers==4.44.2
 huggingface_hub==0.36.2
 rembg==2.0.69
+onnxruntime-gpu
+utils3d
 addict==2.4.0
 psutil==7.2.2
 gradio==4.44.1
